@@ -1,167 +1,135 @@
+# SHL Assessment Recommendation System
+
+## Project Overview
+
+This project builds an intelligent recommendation system to assist hiring managers in selecting relevant SHL assessments based on a natural language job description or query. The system uses semantic search over embedded assessment data to return the top recommendations.
+
+> The goal is to simplify and improve the efficiency of finding SHL assessments using modern GenAI techniques.
 
 ---
 
-````markdown
-# Intrusion Detection Using NSL-KDD Dataset with Machine Learning
+## What This Does
 
-A Python-based intrusion detection system (IDS) leveraging machine learning techniques to accurately classify network traffic (normal vs. attack) using the NSL-KDD dataset.
-
-## Overview
-
-This project implements the following pipeline:
-
-1. **Data Loading & Preprocessing**  
-   - Reads the NSL-KDD dataset (training and testing).  
-   - Performs exploratory data analysis (EDA), handles missing values, encodes categorical features, scales numeric data, and balances classes if necessary.
-
-2. **Feature Processing & Selection**  
-   - Applies feature selection techniques (e.g., Information Gain, Recursive Feature Elimination, or custom algorithms) to extract the most impactful features for detection.
-
-3. **Model Training & Evaluation**  
-   - Trains classifiers such as Logistic Regression, Decision Trees, Random Forests, Support Vector Machines, or others.  
-   - Evaluates using metrics like **Accuracy**, **Precision**, **Recall**, **F1-score**, and provides a confusion matrix.
-
-4. **Performance Analysis**  
-   - Charts and summary statistics elucidate how different models and feature subsets perform on intrusion detection tasks.
-
-## Table of Contents
-
-- [Installation](#installation)  
-- [Dataset](#dataset)  
-- [Usage](#usage)  
-- [Results](#results)  
-- [Contributions](#contributions)  
-- [References](#references)  
-- [License](#license)
+- Takes **a natural language job description or query** as input.
+- Returns **1 to 10 relevant SHL assessments** based on semantic similarity.
+- Each recommendation includes:
+  - Assessment Name + Link
+  - Duration
+  - Test Type(s)
+  - Remote Testing Support
+  - Adaptive/IRT Support
 
 ---
 
-## Installation
+## Directory Structure
 
-1. **Clone the repository**  
-   ```bash
-   git clone https://github.com/adhitasinha/Intrusion-Detection-Using-NSL--KDD-Dataset-using-Machine-Learning.git
-   cd Intrusion-Detection-Using-NSL--KDD-Dataset-using-Machine-Learning
-````
+```
+Embeddings_shl/
+├── outputs/
+│   ├── assessment_embeddings.npy
+│   ├── assessment_texts.json
+│   ├── faiss_index.idx
+│   ├── eval_results.xlsx
+│   └── ...
+├── benchmark_eval.py           # Evaluation script (MAP@K, Recall@K)
+├── clean_metadata.py           # Clean raw SHL metadata
+├── generate_embeddings.py      # Generate and save embeddings
+├── handle_query.py             # Load query and get top N results
+├── query_eval_set.json         # Sample test queries
+├── requirements.txt
+├── scraper.py                  # Crawl data from SHL catalog
+├── shl_metadata_index.csv/json
+```
+---
 
-2. **Set up a virtual environment (recommended)**
+## Tech Stack
 
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install required packages**
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-   Typical dependencies might include:
-
-   * `numpy`, `pandas`
-   * `scikit-learn`
-   * `matplotlib`, `seaborn`
-   * `joblib` (for model saving)
-   * `jupyter` (if notebooks are included)
+| Task | Tool |
+|------|------|
+| Embeddings | [INSTRUCTOR-XL](https://huggingface.co/hkunlp/instructor-xl) |
+| Semantic Search | [FAISS](https://github.com/facebookresearch/faiss) |
+| Language | Python 3.10 |
+| Evaluation Metrics | MAP@K, Recall@K |
 
 ---
 
-## Dataset
+## Your Approach
 
-The project expects the **NSL-KDD** dataset files:
+### 1. Data Collection & Preprocessing
+- Scraped SHL assessments using `scraper.py`.
+- Cleaned and structured metadata with `clean_metadata.py`.
 
-* `KDDTrain+.txt` (training)
-* `KDDTest+.txt` (testing)
+### 2. Embedding Generation
+- Generated sentence embeddings using `hkunlp/instructor-xl` model.
+- Stored them in `assessment_embeddings.npy` and indexed with FAISS.
 
-Place these files in a `data/` directory at the project root.
-You can download them from publicly available sources such as \[Kaggle NSL-KDD dataset] or the original repository.
+### 3. Query Processing
+- Input query is embedded using the same model.
+- FAISS returns top relevant assessment vectors.
+- Final results are parsed with key metadata.
 
 ---
 
-## Usage
+## How to Run (Step-by-Step)
 
-### Running the Main Script
-
-To perform the full pipeline (preprocessing → training → evaluation), run:
+### 1. Install Dependencies
 
 ```bash
-python main.py --train data/KDDTrain+.txt --test data/KDDTest+.txt
+python -m venv .venv
+.\.venv\Scripts\activate  # For Windows
+pip install -r requirements.txt
 ```
 
-This script will:
+---
 
-* Preprocess the data (clean, encode, scale, select features)
-* Train specified classifiers
-* Output evaluation metrics and plots (e.g. confusion matrix, ROC curves)
-
-### Using Notebooks (optional)
-
-If Jupyter notebooks are included (e.g., `exploratory_analysis.ipynb`):
+### 2. Generate Embeddings (if not already present)
 
 ```bash
-jupyter notebook
+python generate_embeddings.py
 ```
 
-Then navigate to and run through the notebook to explore data and results step-by-step.
+---
+
+### 3. Run a Test Query from Terminal
+
+```bash
+python handle_query.py
+```
+
+You’ll be prompted to enter your query, e.g.:
+
+```
+Looking for Python and SQL developer assessments within 45 minutes.
+```
+
+The terminal will output the top recommended assessments in a tabular format.
 
 ---
 
-## Results
+### 4. Evaluate Model (MAP@3, Recall@3)
 
-Some typical outcomes reported in similar projects include:
+```bash
+python benchmark_eval.py
+```
 
-| Classifier          | Accuracy | Precision | Recall | F1-score |
-| ------------------- | -------- | --------- | ------ | -------- |
-| Logistic Regression | \~85-90% | \~0.85    | \~0.85 | \~0.85   |
-| Random Forest       | \~90-95% | \~0.90    | \~0.90 | \~0.90   |
-| SVM / Decision Tree | \~88-92% | \~0.88    | \~0.88 | \~0.88   |
-
-These scores are for illustration; refer to your project's actual outputs for precise results.
+This script uses `query_eval_set.json` and prints out benchmark metrics.
 
 ---
 
-## Contributions
+## Evaluation Metrics
 
-Contributions are welcome! Consider:
+- **Mean Recall@3** – Measures how many relevant items were retrieved.
+- **MAP@3 (Mean Average Precision)** – Measures quality and ranking of recommendations.
 
-* Adding new feature selection methods (e.g., Information Gain, PCA)
-* Tuning model hyperparameters (e.g., via `GridSearchCV`)
-* Expanding the dataset to include KDD'99 or CIC-IDS
-* Improving visualization or adding deployment examples (e.g., via Flask API)
-
-To contribute:
-
-1. Fork the project
-2. Create a new branch (`git checkout -b feature-name`)
-3. Make changes and commit them
-4. Submit a Pull Request for review
+> These are computed using `benchmark_eval.py`.
 
 ---
 
-## References
+## Sample Queries to Try
 
-* NSL-KDD dataset: a refined version of KDD’99 addressing issues like redundancy and imbalance
-* Notable methodologies:
-
-  * **Information Gain-based feature selection** paired with Random Forest yielding \~99.7% accuracy on NSL-KDD ([beei.org][1])
-  * **Hybrid models (Decision Tree + Random Forest stack)** achieving \~85% on NSL-KDD and \~98% on CICIDS2017 ([arXiv][2])
-  * **Deep learning approaches (DNN, PCA-based feature extraction)** showing strong performance on NSL-KDD ([arXiv][3])
+- “I’m hiring for Java developers who can also collaborate with business teams. The test should be within 40 minutes.”
+- “Looking to hire mid-level professionals skilled in Python, SQL, and JavaScript. Max duration: 60 mins.”
+- “Need an analyst assessment with both Cognitive and Personality tests, within 45 mins.”
 
 ---
 
-## License
-
-This project is licensed under the [MIT License](LICENSE). Feel free to use, modify, and distribute with attribution.
-
----
-
-### Support or Questions?
-
-For issues or feature requests, feel free to open an issue in the repository or reach out to the maintainer.
-
-Thank you for exploring this Intrusion Detection project!
-
-[1]: https://beei.org/index.php/EEI/article/view/7308?utm_source=chatgpt.com "Anomaly intrusion detection using machine learning- IG-R based on ..."
-[2]: https://arxiv.org/abs/2003.08585?utm_source=chatgpt.com "Hybrid Model For Intrusion Detection Systems"
-[3]: https://arxiv.org/abs/1910.01114?utm_source=chatgpt.com "Intrusion detection systems using classical machine learning techniques versus integrated unsupervised feature learning and deep neural network"
