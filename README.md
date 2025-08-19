@@ -1,4 +1,3 @@
-Here's a polished and professional **README.md** tailored for the GitHub project *Intrusion-Detection-Using-NSL--KDD-Dataset-using-Machine-Learning* by **adhitasinha**. Since I didn't have direct access to the repository contents (code, data files, structure), feel free to adjust the sections—especially dataset paths, dependencies, usage examples, and results—based on the actual project details.
 
 ---
 
